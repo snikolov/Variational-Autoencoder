@@ -61,9 +61,19 @@ class VA:
         for i in xrange(len(totalGradients)):
             self.h[i] += totalGradients[i]*totalGradients[i]
 
+
+    def encode(self, x):
+        e = np.random.normal(0,1,[self.dimZ, x.shape[1]])
+        return self.encodefunction(*(self.params), x=x, eps=e)
+
+
+    def decode(self, z):
+        return self.decodefunction(*(self.params), z=z)
+
+
     def createGradientFunctions(self):
         #Create the Theano variables
-        W1,W2,W3,W4,W5,W6,x,eps = T.dmatrices("W1","W2","W3","W4","W5","W6","x","eps")
+        W1,W2,W3,W4,W5,W6,x,eps,y,z = T.dmatrices("W1","W2","W3","W4","W5","W6","x","eps","y","z")
 
         #Create biases as cols so they can be broadcasted for minibatches
         b1,b2,b3,b4,b5,b6 = T.dcols("b1","b2","b3","b4","b5","b6")
@@ -87,6 +97,7 @@ class VA:
             h_decoder = T.nnet.softplus(T.dot(W4,z) + b4)
             mu_decoder = T.nnet.sigmoid(T.dot(W5,h_decoder) + b5)
             log_sigma_decoder = 0.5*(T.dot(W6,h_decoder) + b6)
+            y = log_sigma_decoder
             logpxz = T.sum(-(0.5 * np.log(2 * np.pi) + log_sigma_decoder) - 0.5 * ((x - mu_decoder) / T.exp(log_sigma_decoder))**2)
             gradvariables = [W1,W2,W3,W4,W5,W6,b1,b2,b3,b4,b5,b6]
         else:
@@ -104,6 +115,8 @@ class VA:
         #Add the lowerbound so we can keep track of results
         derivatives.append(logp)
 
+        self.encodefunction = th.function(gradvariables + [x,eps], z, on_unused_input='ignore')
+        self.decodefunction = th.function(gradvariables + [z], y, on_unused_input='ignore')
         self.gradientfunction = th.function(gradvariables + [x,eps], derivatives, on_unused_input='ignore')
         self.lowerboundfunction = th.function(gradvariables + [x,eps], logp, on_unused_input='ignore')
 
@@ -158,3 +171,5 @@ class VA:
                 prior = 0
 
             self.params[i] += self.learning_rate/np.sqrt(self.h[i]) * (totalGradients[i] - prior*(current_batch_size/N))
+
+

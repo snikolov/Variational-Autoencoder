@@ -10,7 +10,8 @@ import numpy as np
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.externals.six.moves import xrange
-from sklearn.utils import atleast2d_or_csr, check_arrays, check_random_state, gen_even_slices
+#from sklearn.utils import atleast2d_or_csr, check_arrays, check_random_state, gen_even_slices
+from sklearn.utils import check_array, check_random_state, gen_even_slices
 
 
 class VA(BaseEstimator, TransformerMixin):
@@ -366,7 +367,8 @@ class VA(BaseEstimator, TransformerMixin):
         list_lowerbound : list of int
         list of lowerbound over time
         """
-        X, = check_arrays(X, sparse_format='csr', dtype=np.float)
+        #X, = check_arrays(X, sparse_format='csr', dtype=np.float)
+        X = check_array(X)
         [N, dimX] = X.shape
         rng = check_random_state(self.random_state)
 
@@ -415,7 +417,8 @@ class VA(BaseEstimator, TransformerMixin):
         X : array-like, shape (N, n_components_decoder)
             The transformed data
         """
-        X, = check_arrays(X, sparse_format='csr', dtype=np.float)
+        X = check_array(X)
+        #X, = check_arrays(X, sparse_format='csr', dtype=np.float)
 
         if self.continuous:
             return np.log(1 + np.exp(X.dot(self.params["W1"].T) + self.params["b1"].T))
@@ -451,7 +454,8 @@ class VA(BaseEstimator, TransformerMixin):
         lower bound : int
             The lower bound on the log likelihood 
         """
-        v = atleast2d_or_csr(X)
+        #v = atleast2d_or_csr(X)
+        v = check_array(X)
         rng = check_random_state(self.random_state)
 
         gradients, lowerbound = self._computeGradients(v.T, rng)
